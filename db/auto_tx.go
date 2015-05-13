@@ -5,26 +5,30 @@ import (
 	"fmt"
 )
 
-type IExecutor interface {
+type Executor interface {
 	Exec(query string, args ...interface{}) (sql.Result, error)
 }
 
-type IQueryer interface {
+type Queryer interface {
 	Query(query string, args ...interface{}) (*sql.Rows, error)
 	QueryRow(query string, args ...interface{}) *sql.Row
 }
 
-type IAutoTx interface {
-	IExecutor
-	IQueryer
+type Preparer interface {
 	Prepare(query string) (*sql.Stmt, error)
+}
+
+type AutoTx interface {
+	Executor
+	Queryer
+	Preparer
 	Stmt(stmt *sql.Stmt) *sql.Stmt
 }
 
 // A transaction handler function.
 // The handler handles any panics in transaction and decides whether to
 // commit or rollback automatically according to the error returned.
-func Transact(db *sql.DB, txFunc func(IAutoTx) error) (err error) {
+func Transact(db *sql.DB, txFunc func(AutoTx) error) (err error) {
 	tx, err := db.Begin()
 	if err != nil {
 		return
