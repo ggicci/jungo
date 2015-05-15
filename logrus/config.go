@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/ggicci/jungo/path"
+	"github.com/ggicci/jungo/program"
 )
 
 func NewConfig() *config { return &config{} }
@@ -41,7 +41,7 @@ func normConfigs(cfg *config) *config {
 	// Check the config items.
 
 	if cfg.LogDir = strings.TrimSpace(cfg.LogDir); cfg.LogDir == "" {
-		cfg.LogDir = path.AbsPath("../logs")
+		cfg.LogDir = program.AbsPath("../logs")
 		std.Printf("log_dir not set, defaults to %q", cfg.LogDir)
 	}
 

@@ -8,12 +8,12 @@ import (
 
 var gConfig *config = NewConfig()
 
-func NewLogrusLoggerFromConfigFile(filename string) (*log.Logger, error) {
+func NewLoggerFromConfigFile(filename string) (*log.Logger, error) {
 	cfg, err := loadConfigs(filename)
 	if err != nil {
 		return nil, err
 	}
-	return NewLogrusLoggerFromConfig(cfg)
+	return NewLoggerFromConfig(cfg)
 }
 
 // Returns a default logrus logger, with the default settings are:
@@ -23,8 +23,8 @@ func NewLogrusLoggerFromConfigFile(filename string) (*log.Logger, error) {
 // 		"log_level": "info",
 // 		"log_roll_period": "none"
 // 	}
-func NewLogrusLogger() (*log.Logger, error) {
-	return NewLogrusLoggerFromConfig(NewConfig())
+func NewLogger() (*log.Logger, error) {
+	return NewLoggerFromConfig(NewConfig())
 }
 
 // Instantiate a logrus logger object from a config.
@@ -35,7 +35,7 @@ func NewLogrusLogger() (*log.Logger, error) {
 // 		"log_level": "info",
 // 		"log_roll_period": "none"
 // 	}
-func NewLogrusLoggerFromConfig(cfg *config) (*log.Logger, error) {
+func NewLoggerFromConfig(cfg *config) (*log.Logger, error) {
 	cfg = normConfigs(cfg)
 
 	logger := log.New()
@@ -60,7 +60,7 @@ func NewLogrusLoggerFromConfig(cfg *config) (*log.Logger, error) {
 
 	if cfg.logRollPeriod != ROLL_PERIOD_NONE {
 		// Start rolling.
-		go startRolling(logger, cfg.logRollPeriod)
+		startRolling(logger, cfg)
 	}
 
 	return logger, nil

@@ -2,6 +2,8 @@ package logrus
 
 import (
 	"fmt"
+	std "log"
+	"os"
 	"path/filepath"
 	"time"
 
@@ -37,8 +39,39 @@ func ParseRollPeriod(period string) (RollPeriod, error) {
 	return RollPeriod(0), fmt.Errorf("not a valid roll period: %q", period)
 }
 
-func startRolling(logger *log.Logger, period RollPeriod) {
-	println("start rolling")
+func startRolling(logger *log.Logger, cfg *config) {
+	var diff time.Duration
+	now := time.Now()
+	switch cfg.logRollPeriod {
+	case ROLL_PERIOD_HOURLY:
+		diff = now.Truncate(time.Hour).Add(time.Hour).Sub(now)
+	case ROLL_PERIOD_DAILY:
+		diff = time.Date(now.Year(), now.Month(), now.Day(),
+			0, 0, 0, 0, time.Local).AddDate(0, 0, 1).Sub(now)
+	default:
+		return
+	}
+	time.AfterFunc(diff, func() { roll(logger, cfg.LogDir, cfg.LogFilename, cfg.logRollPeriod) })
+}
+
+func roll(logger *log.Logger, logDir, logFilename string, period RollPeriod) {
+	if newFile, err := os.OpenFile(
+		getFilename(logDir, logFilename, period),
+		os.O_CREATE|os.O_RDWR|os.O_APPEND,
+		0644,
+	); err != nil {
+		std.Printf("failed rolling log file, error: %v", err)
+	} else {
+		if oldFile, ok := logger.Out.(*os.File); ok {
+			go func() {
+				time.Sleep(time.Second * 3)
+				oldFile.Close()
+			}()
+		}
+		logger.Out = newFile
+	}
+
+	time.AfterFunc(time.Duration(period), func() { roll(logger, logDir, logFilename, period) })
 }
 
 func getFilename(logDir, logFilename string, period RollPeriod) string {
