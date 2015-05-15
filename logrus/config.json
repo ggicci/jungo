@@ -1,0 +1,6 @@
+{
+	"log_dir": "../logs",
+	"log_filename": "logrus.log",
+	"log_level": "info",
+	"log_roll_period": "daily"
+}
