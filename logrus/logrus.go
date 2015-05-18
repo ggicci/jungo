@@ -46,6 +46,7 @@ func NewLoggerFromConfig(cfg *config) (*log.Logger, error) {
 		}
 	}
 
+	// Common log file.
 	if f, err := os.OpenFile(
 		getFilename(cfg.LogDir, cfg.LogFilename, cfg.logRollPeriod),
 		os.O_CREATE|os.O_RDWR|os.O_APPEND,
@@ -56,6 +57,17 @@ func NewLoggerFromConfig(cfg *config) (*log.Logger, error) {
 		logger.Out = f
 	}
 
+	// Error log file.
+	if cfg.LogErrorFilename != "" {
+		errorHook, err := NewErrorHook(getErrorFilename(cfg.LogDir, cfg.LogErrorFilename))
+		if err != nil {
+			return nil, err
+		}
+		// Hook the error levels.
+		logger.Hooks.Add(errorHook)
+	}
+
+	// Roll common logs.
 	if cfg.logRollPeriod != ROLL_PERIOD_NONE {
 		// Start rolling.
 		startRolling(logger, cfg)

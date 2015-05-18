@@ -85,3 +85,7 @@ func getFilename(logDir, logFilename string, period RollPeriod) string {
 	}
 	return logFilename
 }
+
+func getErrorFilename(logDir, logFilename string) string {
+	return filepath.Join(logDir, logFilename)
+}
