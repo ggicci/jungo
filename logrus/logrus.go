@@ -6,8 +6,6 @@ import (
 	log "github.com/Sirupsen/logrus"
 )
 
-var gConfig *config = NewConfig()
-
 func NewLoggerFromConfigFile(filename string) (*log.Logger, error) {
 	cfg, err := loadConfigs(filename)
 	if err != nil {

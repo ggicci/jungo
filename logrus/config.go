@@ -2,13 +2,14 @@ package logrus
 
 import (
 	"encoding/json"
-	std "log"
 	"os"
 	"strings"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/ggicci/jungo/program"
 )
+
+var std = log.StandardLogger()
 
 func NewConfig() *config { return &config{} }
 
@@ -42,18 +43,20 @@ func normConfigs(cfg *config) *config {
 
 	if cfg.LogDir = strings.TrimSpace(cfg.LogDir); cfg.LogDir == "" {
 		cfg.LogDir = program.AbsPath("../logs")
-		std.Printf("log_dir not set, defaults to %q", cfg.LogDir)
+		std.Warnf("log_dir not set, defaults to %q", cfg.LogDir)
+	} else {
+		cfg.LogDir = program.AbsPath(cfg.LogDir)
 	}
 
 	cfg.LogFilename = strings.TrimSpace(cfg.LogFilename)
 	if cfg.LogFilename = strings.Trim(cfg.LogFilename, "."); cfg.LogFilename == "" {
 		cfg.LogFilename = "logrus.log"
-		std.Printf("log_filename not set, defaults to %q", cfg.LogFilename)
+		std.Warnf("log_filename not set, defaults to %q", cfg.LogFilename)
 	}
 
 	if level, err := log.ParseLevel(cfg.LogLevelString); err != nil {
 		cfg.LogLevelString = LogLevelString(log.InfoLevel)
-		std.Printf("%s, reset to %q", err, cfg.LogLevelString)
+		std.Warnf("%s, reset to %q", err, cfg.LogLevelString)
 		cfg.logLevel = log.InfoLevel
 	} else {
 		cfg.logLevel = level
@@ -61,7 +64,7 @@ func normConfigs(cfg *config) *config {
 
 	if period, err := ParseRollPeriod(cfg.LogRollPeriodString); err != nil {
 		cfg.LogRollPeriodString = RollPeriodString(ROLL_PERIOD_NONE)
-		std.Printf("%s, reset to %q", err, cfg.LogRollPeriodString)
+		std.Warnf("%s, reset to %q", err, cfg.LogRollPeriodString)
 		cfg.logRollPeriod = ROLL_PERIOD_NONE
 	} else {
 		cfg.logRollPeriod = period

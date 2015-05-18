@@ -2,7 +2,6 @@ package logrus
 
 import (
 	"fmt"
-	std "log"
 	"os"
 	"path/filepath"
 	"time"
@@ -60,7 +59,7 @@ func roll(logger *log.Logger, logDir, logFilename string, period RollPeriod) {
 		os.O_CREATE|os.O_RDWR|os.O_APPEND,
 		0644,
 	); err != nil {
-		std.Printf("failed rolling log file, error: %v", err)
+		std.WithField("error", err).Error("failed rolling log file")
 	} else {
 		if oldFile, ok := logger.Out.(*os.File); ok {
 			go func() {
