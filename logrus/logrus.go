@@ -2,6 +2,7 @@ package logrus
 
 import (
 	"os"
+	"time"
 
 	log "github.com/Sirupsen/logrus"
 )
@@ -37,6 +38,10 @@ func NewLoggerFromConfig(cfg *config) (*log.Logger, error) {
 	cfg = normConfigs(cfg)
 
 	logger := log.New()
+	formatter := new(log.TextFormatter)
+	formatter.DisableColors = true
+	formatter.TimestampFormat = time.RFC3339Nano
+	logger.Formatter = formatter
 	logger.Level = cfg.logLevel
 
 	_, err := os.Stat(cfg.LogDir)

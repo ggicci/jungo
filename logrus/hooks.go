@@ -2,6 +2,7 @@ package logrus
 
 import (
 	"os"
+	"time"
 
 	log "github.com/Sirupsen/logrus"
 )
@@ -15,6 +16,10 @@ func NewErrorHook(filename string) (*ErrorHook, error) {
 	if f, err := os.OpenFile(filename, os.O_CREATE|os.O_RDWR|os.O_APPEND, 0644); err != nil {
 		return nil, err
 	} else {
+		formatter := new(log.TextFormatter)
+		formatter.DisableColors = true
+		formatter.TimestampFormat = time.RFC3339Nano
+		logger.Formatter = formatter
 		logger.Out = f
 		return &ErrorHook{logger}, nil
 	}
