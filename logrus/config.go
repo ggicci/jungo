@@ -4,12 +4,21 @@ import (
 	"encoding/json"
 	"os"
 	"strings"
+	"time"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/ggicci/jungo/program"
 )
 
-var std = log.StandardLogger()
+var (
+	std       = log.New()
+	formatter = new(log.TextFormatter)
+)
+
+func init() {
+	formatter.DisableColors = true
+	formatter.TimestampFormat = time.RFC3339Nano
+}
 
 func NewConfig() *config { return &config{} }
 
