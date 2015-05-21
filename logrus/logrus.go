@@ -2,7 +2,6 @@ package logrus
 
 import (
 	"os"
-	"time"
 
 	log "github.com/Sirupsen/logrus"
 )
@@ -26,21 +25,10 @@ func NewLogger() (*log.Logger, error) {
 	return NewLoggerFromConfig(NewConfig())
 }
 
-// Instantiate a logrus logger object from a config.
-// The default settings are:
-// 	{
-// 		"log_dir": "../logs",
-// 		"log_filename": "logrus.log",
-// 		"log_level": "info",
-// 		"log_roll_period": "none"
-// 	}
 func NewLoggerFromConfig(cfg *config) (*log.Logger, error) {
 	cfg = normConfigs(cfg)
 
 	logger := log.New()
-	formatter := new(log.TextFormatter)
-	formatter.DisableColors = true
-	formatter.TimestampFormat = time.RFC3339Nano
 	logger.Formatter = formatter
 	logger.Level = cfg.logLevel
 
