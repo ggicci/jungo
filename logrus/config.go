@@ -73,7 +73,7 @@ func normConfigs(cfg *config) *config {
 
 	if cfg.LogDir = strings.TrimSpace(cfg.LogDir); cfg.LogDir == "" {
 		cfg.LogDir = program.AbsPath("../logs")
-		std.Warnf("logrus config: log_dir not set, defaults to %q", cfg.LogDir)
+		std.Warnf("config: log_dir not set, defaults to %q", cfg.LogDir)
 	} else {
 		cfg.LogDir = program.AbsPath(cfg.LogDir)
 	}
@@ -83,7 +83,7 @@ func normConfigs(cfg *config) *config {
 	cfg.LogFilename = strings.Trim(cfg.LogFilename, ".")
 	if cfg.LogFilename == "" {
 		cfg.LogFilename = "logrus.log"
-		std.Warnf("logrus config: log_filename not set, defaults to %q", cfg.LogFilename)
+		std.Warnf("config: log_filename not set, defaults to %q", cfg.LogFilename)
 	}
 
 	cfg.LogErrorFilename = strings.TrimSpace(cfg.LogErrorFilename)
@@ -94,7 +94,7 @@ func normConfigs(cfg *config) *config {
 	}
 
 	if level, err := log.ParseLevel(cfg.LogLevelString); err != nil {
-		std.Warnf("logrus config: log_level was %s (parse error: %v), reset to %q",
+		std.Warnf("config: log_level was %s (parse error: %v), reset to %q",
 			cfg.LogLevelString, err, LogLevelString(log.InfoLevel))
 		cfg.LogLevelString = LogLevelString(log.InfoLevel)
 		cfg.logLevel = log.InfoLevel
@@ -103,7 +103,7 @@ func normConfigs(cfg *config) *config {
 	}
 
 	if period, err := ParseRollPeriod(cfg.LogRollPeriodString); err != nil {
-		std.Warnf("logrus config: log_roll_period was %s (parse error: %v), reset to %q",
+		std.Warnf("config: log_roll_period was %s (parse error: %v), reset to %q",
 			cfg.LogRollPeriodString, err, RollPeriodString(ROLL_PERIOD_NONE))
 		cfg.LogRollPeriodString = RollPeriodString(ROLL_PERIOD_NONE)
 		cfg.logRollPeriod = ROLL_PERIOD_NONE
