@@ -1,7 +1,6 @@
 package logutil
 
 import (
-	"bufio"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -26,9 +25,8 @@ type TimeRotator struct {
 	basename string
 	period   RotatePeriod
 
-	bufw *bufio.Writer
-	fd   *os.File
-	mu   sync.Mutex
+	fd *os.File
+	mu sync.Mutex
 }
 
 func NewTimeRotator(filename string, period RotatePeriod) (*TimeRotator, error) {
@@ -52,11 +50,7 @@ func NewTimeRotator(filename string, period RotatePeriod) (*TimeRotator, error) 
 }
 
 func (r *TimeRotator) Write(b []byte) (n int, err error) {
-	return r.bufw.Write(b)
-}
-
-func (r *TimeRotator) Flush() error {
-	return r.bufw.Flush()
+	return r.fd.Write(b)
 }
 
 func (r *TimeRotator) startRotate() error {
@@ -105,20 +99,16 @@ func (r *TimeRotator) rotate() error {
 
 	// Flush and close the old.
 	oldfd := r.fd
-	oldbufw := r.bufw
 	go func() {
 		if oldfd == nil {
 			return
 		}
 		time.Sleep(3 * time.Second)
-		oldbufw.Flush()
 		oldfd.Close()
 	}()
 
-	bufw := bufio.NewWriter(fd)
-	// Replace with the new bufw and fd.
+	// Replace with the new fd.
 	r.fd = fd
-	r.bufw = bufw
 	return nil
 }
 
