@@ -4,11 +4,11 @@ import (
 	"log"
 	"time"
 
-	rotator "github.com/ggicci/jungo/log"
+	"github.com/ggicci/jungo/logutil"
 )
 
 func main() {
-	tr, err := rotator.NewTimeRotator("/tmp/logtest/my.log", rotator.Hourly)
+	tr, err := logutil.NewTimeRotator("/tmp/logtest/my.log", logutil.Hourly)
 	if err != nil {
 		log.Fatal(err)
 	}
