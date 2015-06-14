@@ -5,7 +5,9 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
+	"sync/atomic"
 	"time"
+	"unsafe"
 
 	"log"
 )
@@ -98,7 +100,9 @@ func (r *TimeRotator) rotate() error {
 	}
 
 	// Flush and close the old.
-	oldfd := r.fd
+	oldptr := unsafe.Pointer(r.fd)
+	old := atomic.SwapPointer(&oldptr, unsafe.Pointer(fd))
+	oldfd := (*os.File)(old)
 	go func() {
 		if oldfd == nil {
 			return
