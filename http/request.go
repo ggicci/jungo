@@ -134,7 +134,7 @@ func (r *Request) GeneralAccessLogItems() map[string]interface{} {
 	items := map[string]interface{}{
 		"method":     r.Method,
 		"path":       r.URL.Path,
-		"host":       r.URL.Host,
+		"host":       r.Host,
 		"ip":         r.IP(),
 		"referer":    r.Referer(),
 		"user_agent": r.UserAgent(),
