@@ -30,7 +30,7 @@ type Request struct {
 	*http.Request
 }
 
-func request(r *http.Request) *Request {
+func NewRequest(r *http.Request) *Request {
 	return &Request{r}
 }
 
@@ -132,10 +132,10 @@ func acceptEncodings(rawstr string) (acceptEncodings []string) {
 
 func (r *Request) GeneralAccessLogItems() map[string]interface{} {
 	items := map[string]interface{}{
+		"method":     r.Method,
 		"path":       r.URL.Path,
 		"host":       r.URL.Host,
 		"ip":         r.IP(),
-		"method":     r.Method,
 		"referer":    r.Referer(),
 		"user_agent": r.UserAgent(),
 	}
