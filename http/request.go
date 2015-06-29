@@ -129,19 +129,3 @@ func acceptEncodings(rawstr string) (acceptEncodings []string) {
 
 	return
 }
-
-func (r *Request) GeneralAccessLogItems() map[string]interface{} {
-	items := map[string]interface{}{
-		"method":     r.Method,
-		"path":       r.URL.Path,
-		"host":       r.Host,
-		"ip":         r.IP(),
-		"referer":    r.Referer(),
-		"user_agent": r.UserAgent(),
-	}
-	values := r.URL.Query()
-	for k, v := range values {
-		items[k] = v
-	}
-	return items
-}
