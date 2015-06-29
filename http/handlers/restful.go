@@ -8,21 +8,40 @@ import (
 type RESTful map[string]http.Handler
 
 func (rest RESTful) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
-	method := r.Method
-
 	// Match a handler.
-	if h := rest[method]; h != nil {
+	if h := rest.handler(r.Method); h != nil {
 		h.ServeHTTP(rw, r)
 		return
 	}
 
 	// Serve 405 error.
-	allowed := []string{}
-	for k, h := range rest {
-		if h != nil {
-			allowed = append(allowed, k)
+	rw.Header().Set("Allow", strings.Join(rest.allowedMethods(), ","))
+	http.Error(rw, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
+}
+
+func (rest RESTful) handler(method string) http.Handler {
+	handler := rest[method]
+	if handler != nil {
+		return handler
+	}
+	if method == "HEAD" && rest["GET"] != nil {
+		return rest["GET"]
+	}
+	return nil
+}
+
+func (rest RESTful) allowedMethods() []string {
+	allowedMethodsMap := map[string]struct{}{
+		"HEAD": struct{}{},
+	}
+	for method, handler := range rest {
+		if handler != nil {
+			allowedMethodsMap[method] = struct{}{}
 		}
 	}
-	rw.Header().Set("Allow", strings.Join(allowed, ","))
-	http.Error(rw, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
+	allowedMethods := []string{}
+	for method, _ := range allowedMethodsMap {
+		allowedMethods = append(allowedMethods, method)
+	}
+	return allowedMethods
 }
