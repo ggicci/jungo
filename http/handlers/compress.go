@@ -36,6 +36,13 @@ func Compresser(next http.Handler) http.Handler {
 			}
 		}
 
+		// As per rfc-2616 section 14.3. If the server can't encode the content
+		// according to the accept encodings list, it should send 406 error.
+		if enc == "" {
+			http.Error(rw, http.StatusText(http.StatusNotAcceptable), http.StatusNotAcceptable)
+			return
+		}
+
 		rw.Header().Set("Content-Encoding", enc)
 
 		var output io.Writer = rw
