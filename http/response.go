@@ -10,13 +10,11 @@ import (
 
 type Response struct {
 	http.ResponseWriter
-	rq *http.Request
 }
 
-func NewResponse(rw http.ResponseWriter, rq *http.Request) *Response {
+func NewResponse(rw http.ResponseWriter) *Response {
 	return &Response{
 		ResponseWriter: rw,
-		rq:             rq,
 	}
 }
 
