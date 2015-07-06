@@ -7,6 +7,7 @@ import (
 
 type IFormValueGetter interface {
 	HasFormValue(key string) bool
+	FormValue(key string) string
 	// Get value from request.Form.
 	// The second returned value indicates whether the key exists.
 	FormValueOk(key string) (string, bool)
@@ -25,6 +26,8 @@ type IFormValueGetter interface {
 	FormValueFloat64(key string) (float64, error)
 	FormValueBool(key string) (bool, error)
 
+	HasPostFormValue(key string) bool
+	PostFormValue(key string) string
 	PostFormValueOk(key string) (string, bool)
 	PostFormValueInt(key string) (int, error)
 	PostFormValueInt8(key string) (int8, error)
@@ -41,9 +44,6 @@ type IFormValueGetter interface {
 	PostFormValueBool(key string) (bool, error)
 
 	// Array values.
-
-	HasPostFormValue(key string) bool
-
 	FormValues(key string) []string
 	FormValueInts(key string) ([]int, error)
 	FormValueInt8s(key string) ([]int8, error)
@@ -89,6 +89,10 @@ func RequestFormValueGetter(r *http.Request) IFormValueGetter {
 func (r *requestFormValueGetter) HasFormValue(key string) bool {
 	_, ok := r.Form[key]
 	return ok
+}
+
+func (r *requestFormValueGetter) FormValue(key string) string {
+	return r.Request.FormValue(key)
 }
 
 func (r *requestFormValueGetter) FormValueOk(key string) (string, bool) {
@@ -155,6 +159,10 @@ func (r *requestFormValueGetter) FormValueBool(key string) (bool, error) {
 func (r *requestFormValueGetter) HasPostFormValue(key string) bool {
 	_, ok := r.PostForm[key]
 	return ok
+}
+
+func (r *requestFormValueGetter) PostFormValue(key string) string {
+	return r.Request.PostFormValue(key)
 }
 
 func (r *requestFormValueGetter) PostFormValueOk(key string) (string, bool) {
