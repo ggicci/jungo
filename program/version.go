@@ -6,8 +6,6 @@ import (
 
 // Versioning: [major].[minor].[revision]
 
-const VERSION = "0.1"
-
 type VersionNo struct {
 	Major    int
 	Minor    int
