@@ -23,7 +23,7 @@ func (r *Response) WriteJSON(v interface{}) (content []byte, err error) {
 	if err != nil {
 		return nil, err
 	}
-	r.Header().Set("Content-Type", "application/json;charset=utf-8")
+	r.Header().Set("Content-Type", "application/json")
 	_, err = r.Write(content)
 	return
 }
