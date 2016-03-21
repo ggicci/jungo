@@ -8,29 +8,38 @@ import (
 )
 
 type mysqlNamedLock struct {
-	tx   *sql.Tx
-	name string
+	tx *sql.Tx
 }
 
-func NewMySQLNamedLock(db *sql.DB, dbName, tblName, lockName string) (NamedLock, error) {
-	name := dbName + "-" + tblName + "-" + lockName
-	if len(name) > 64 {
-		arr := md5.Sum([]byte(name))
-		name = hex.EncodeToString(arr[:])
-	}
+func NewMySQLNamedLock(db *sql.DB) (NamedLock, error) {
+	// Names are locked on a server-wide basis.
+	// Use tx. Since only tx is bound to a single connection. You can't directly use *sql.DB,
+	// it's a connection pool.
 	tx, err := db.Begin()
 	if err != nil {
 		return nil, err
 	}
-	return &mysqlNamedLock{tx, name}, nil
+	return &mysqlNamedLock{tx}, nil
 }
 
-func (lock *mysqlNamedLock) Name() string { return lock.name }
+// Assemble a compatible lock name from the name components.
+// MySQL 5.7.5 and later enforces a maximum length on lock names of 64 characters.
+// Previously, no limit was enforced.
+func (lock *mysqlNamedLock) FormatName(dbName, tblName, lockName string) string {
+	name := dbName + "-" + tblName + "-" + lockName
 
-func (lock *mysqlNamedLock) Acquire(timeout int) error {
+	if len(name) > 64 {
+		arr := md5.Sum([]byte(name))
+		name = hex.EncodeToString(arr[:])
+	}
+
+	return name
+}
+
+func (lock *mysqlNamedLock) Acquire(name string, timeout int) error {
 	sqlstr := `select get_lock(?, ?);`
 	var nullint sql.NullInt64
-	if err := lock.tx.QueryRow(sqlstr, lock.name, timeout).Scan(&nullint); err != nil {
+	if err := lock.tx.QueryRow(sqlstr, name, timeout).Scan(&nullint); err != nil {
 		return err
 	}
 	if nullint.Valid {
@@ -47,10 +56,13 @@ func (lock *mysqlNamedLock) Acquire(timeout int) error {
 	return errors.New("null value")
 }
 
-func (lock *mysqlNamedLock) Release() error {
+// In MySQL 5.7.5 or later, the second GET_LOCK() acquires a second lock and both RELEASE_LOCK()
+// calls return 1 (success). Before MySQL 5.7.5, the second GET_LOCK() releases the first lock ('lock1')
+// and the second RELEASE_LOCK() returns NULL (failure) because there is no 'lock1' to release.
+func (lock *mysqlNamedLock) Release(name string) error {
 	sqlstr := `select release_lock(?);`
 	var nullint sql.NullInt64
-	if err := lock.tx.QueryRow(sqlstr, lock.name).Scan(&nullint); err != nil {
+	if err := lock.tx.QueryRow(sqlstr, name).Scan(&nullint); err != nil {
 		lock.tx.Rollback()
 		return err
 	}
