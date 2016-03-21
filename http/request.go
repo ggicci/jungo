@@ -1,30 +1,12 @@
 package http
 
 import (
-	"fmt"
-	"math/rand"
 	"net/http"
 	"regexp"
 	"sort"
 	"strconv"
 	"strings"
-	"time"
 )
-
-const (
-	k5HexMin = 1 << 16
-	k5HexMax = 1 << 20
-)
-
-var requestIDFormatter = strings.NewReplacer("+", "", "-", "", ".", "")
-
-func GenRequestID() string { return GenRequestIDWithTime(time.Now()) }
-
-func GenRequestIDWithTime(t time.Time) string {
-	n := k5HexMin + rand.Intn(k5HexMax-k5HexMin)
-	return requestIDFormatter.Replace(t.Format("20060102150405.000000000-0700")) +
-		fmt.Sprintf("%X", n)
-}
 
 type Request struct {
 	*http.Request
