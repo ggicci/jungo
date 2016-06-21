@@ -7,6 +7,11 @@ import (
 	"errors"
 )
 
+type NamedLock interface {
+	Acquire(name string, timeout int) error // timeout: seconds
+	Release(name string) error
+}
+
 type mysqlNamedLock struct {
 	tx *sql.Tx
 }
@@ -22,21 +27,14 @@ func NewMySQLNamedLock(db *sql.DB) (NamedLock, error) {
 	return &mysqlNamedLock{tx}, nil
 }
 
-// Assemble a compatible lock name from the name components.
-// MySQL 5.7.5 and later enforces a maximum length on lock names of 64 characters.
-// Previously, no limit was enforced.
-func (lock *mysqlNamedLock) FormatName(dbName, tblName, lockName string) string {
-	name := dbName + "-" + tblName + "-" + lockName
-
+func (lock *mysqlNamedLock) Acquire(name string, timeout int) error {
+	// MySQL 5.7.5 and later enforces a maximum length on lock names of 64 characters.
+	// Previously, no limit was enforced.
 	if len(name) > 64 {
 		arr := md5.Sum([]byte(name))
 		name = hex.EncodeToString(arr[:])
 	}
 
-	return name
-}
-
-func (lock *mysqlNamedLock) Acquire(name string, timeout int) error {
 	sqlstr := `select get_lock(?, ?);`
 	var nullint sql.NullInt64
 	if err := lock.tx.QueryRow(sqlstr, name, timeout).Scan(&nullint); err != nil {
