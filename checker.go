@@ -1,5 +1,9 @@
 package jungo
 
+import (
+	"errors"
+)
+
 type Checker struct {
 	err  error
 	desc string
@@ -24,6 +28,14 @@ func (ck *Checker) String() string {
 		return ck.err.Error()
 	}
 	return ck.desc + ": " + ck.err.Error()
+}
+
+// Returns nil if LastError() is nil, or a new error with desc prefixed.
+func (ck *Checker) DecoratedError() error {
+	if ck.LastError() == nil {
+		return nil
+	}
+	return errors.New(ck.String())
 }
 
 func (ck *Checker) Reset() {
