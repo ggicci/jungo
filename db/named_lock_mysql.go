@@ -5,18 +5,41 @@ import (
 	"database/sql"
 	"encoding/hex"
 	"errors"
+	"time"
 )
 
-type NamedLock interface {
-	Acquire(name string, timeout int) error // timeout: seconds
-	Release(name string) error
+type SingleNamedLock interface {
+	Acquire(timeout int) error // timeout: seconds
+	Release() error
 }
 
-type mysqlNamedLock struct {
-	tx *sql.Tx
+func BattleForLock(db *sql.DB, name string) error {
+	lock, err := NewMySQLSingleNamedLock(db, name)
+	if err != nil {
+		return err
+	}
+
+	if err = lock.Acquire(0); err != nil {
+		return err
+	}
+
+	defer func(lock SingleNamedLock, name string) {
+		if err := lock.Release(); err != nil {
+			println("[MySQLSingleNamedLock] release lock:", err)
+		}
+	}(lock, name)
+
+	time.Sleep(3 * time.Second)
+
+	return nil
 }
 
-func NewMySQLNamedLock(db *sql.DB) (NamedLock, error) {
+type mysqlSingleNamedLock struct {
+	tx   *sql.Tx
+	name string
+}
+
+func NewMySQLSingleNamedLock(db *sql.DB, name string) (SingleNamedLock, error) {
 	// Names are locked on a server-wide basis.
 	// Use tx. Since only tx is bound to a single connection. You can't directly use *sql.DB,
 	// it's a connection pool.
@@ -24,59 +47,66 @@ func NewMySQLNamedLock(db *sql.DB) (NamedLock, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &mysqlNamedLock{tx}, nil
-}
 
-func (lock *mysqlNamedLock) Acquire(name string, timeout int) error {
 	// MySQL 5.7.5 and later enforces a maximum length on lock names of 64 characters.
 	// Previously, no limit was enforced.
 	if len(name) > 64 {
 		arr := md5.Sum([]byte(name))
 		name = hex.EncodeToString(arr[:])
+		println("[MySQLSingleNamedLock], lock named was reduced to \"" + name + "\"")
 	}
 
+	return &mysqlSingleNamedLock{tx, name}, nil
+}
+
+// name: you'd better use format like {db}-{table}-{lock}.
+func (lock *mysqlSingleNamedLock) Acquire(timeout int) error {
+	name := lock.name
 	sqlstr := `select get_lock(?, ?);`
-	var nullint sql.NullInt64
-	if err := lock.tx.QueryRow(sqlstr, name, timeout).Scan(&nullint); err != nil {
+	var result sql.NullInt64
+	if err := lock.tx.QueryRow(sqlstr, name, timeout).Scan(&result); err != nil {
+		lock.tx.Rollback()
 		return err
 	}
-	if nullint.Valid {
-		if nullint.Int64 == 1 {
-			// 1: was obtained successfully.
-			return nil
-		}
-		if nullint.Int64 == 0 {
-			// 0: the attempt timed out (for example, because another client has previously locked the name).
-			return errors.New("timeout")
-		}
+
+	if result.Valid && result.Int64 == 1 {
+		// 1: was obtained successfully.
+		return nil
+	}
+
+	lock.tx.Rollback()
+
+	if result.Valid && result.Int64 == 0 {
+		// 0: the attempt timed out (for example, because another client has previously locked the name).
+		return errors.New("timeout")
 	}
 	// NULL: an error occurred (such as running out of memory or the thread was killed with mysqladmin kill).
-	return errors.New("null value")
+	return errors.New("null value (unknown error)")
 }
 
 // In MySQL 5.7.5 or later, the second GET_LOCK() acquires a second lock and both RELEASE_LOCK()
 // calls return 1 (success). Before MySQL 5.7.5, the second GET_LOCK() releases the first lock ('lock1')
 // and the second RELEASE_LOCK() returns NULL (failure) because there is no 'lock1' to release.
-func (lock *mysqlNamedLock) Release(name string) error {
+// You must call this method after calling `Acquire`.
+func (lock *mysqlSingleNamedLock) Release() error {
+	name := lock.name
 	sqlstr := `select release_lock(?);`
-	var nullint sql.NullInt64
-	if err := lock.tx.QueryRow(sqlstr, name).Scan(&nullint); err != nil {
+	var result sql.NullInt64
+	if err := lock.tx.QueryRow(sqlstr, name).Scan(&result); err != nil {
 		lock.tx.Rollback()
 		return err
 	}
-	if nullint.Valid {
-		if nullint.Int64 == 1 {
-			// 1: lock was released.
-			lock.tx.Commit()
-			return nil
-		}
-		if nullint.Int64 == 0 {
-			// 0: the lock was not established by this thread (in which case the lock is not released).
-			lock.tx.Rollback()
-			return errors.New("the lock was not established by you")
-		}
+
+	lock.tx.Commit()
+
+	if result.Valid && result.Int64 == 1 {
+		// 1: lock was released.
+		return nil
+	}
+	if result.Valid && result.Int64 == 0 {
+		// 0: the lock was not established by this thread (in which case the lock is not released).
+		return errors.New("the lock was not established by you")
 	}
 	// NULL: the named lock did not exist.
-	lock.tx.Rollback()
 	return errors.New("lock does not exist")
 }
