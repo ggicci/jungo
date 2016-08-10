@@ -1,3 +1,3 @@
 package safe
 
-// TODO
+// Use: https://github.com/streamrail/concurrent-map
