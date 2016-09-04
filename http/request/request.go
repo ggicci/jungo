@@ -1,4 +1,4 @@
-package http
+package request
 
 import (
 	"net/http"
@@ -8,31 +8,18 @@ import (
 	"strings"
 )
 
-type Request struct {
-	*http.Request
-}
-
-func NewRequest(r *http.Request) *Request {
-	return &Request{r}
-}
-
-// Some extended handy methods.
-func (r *Request) FormValueGetter() IFormValueGetter {
-	return RequestFormValueGetter(r.Request)
-}
-
-func (r *Request) IsAjax() bool {
+func IsAjax(r *http.Request) bool {
 	return r.Header.Get("X-Requested-With") == "XMLHttpRequest"
 }
 
-func (r *Request) IsUpload() bool {
+func IsUpload(r *http.Request) bool {
 	return strings.Contains(r.Header.Get("Content-Type"), "multipart/form-data")
 }
 
 // From defacto standard HTTP header field. Format below:
 // X-Forwarded-For: client, proxy1, proxy2
 // [Reference](http://en.wikipedia.org/wiki/X-Forwarded-For).
-func (r *Request) Proxies() []string {
+func GetProxies(r *http.Request) []string {
 	if ips := r.Header.Get("X-Forwarded-For"); ips != "" {
 		return strings.Split(ips, ", ")
 	}
@@ -40,8 +27,8 @@ func (r *Request) Proxies() []string {
 }
 
 // Get the IP of the client.
-func (r *Request) IP() string {
-	ips := r.Proxies()
+func GetIP(r *http.Request) string {
+	ips := GetProxies(r)
 	if len(ips) > 0 && ips[0] != "" {
 		return strings.Split(ips[0], ":")[0]
 	}
@@ -53,7 +40,7 @@ func (r *Request) IP() string {
 }
 
 // Return the accept encodings list sorted by qvalue in descending order.
-func (r *Request) AcceptEncodings() []string {
+func GetAcceptEncodings(r *http.Request) []string {
 	return acceptEncodings(r.Header.Get("Accept-Encoding"))
 }
 
