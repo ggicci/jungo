@@ -1,4 +1,4 @@
-package jungo
+package misc
 
 import (
 	"errors"

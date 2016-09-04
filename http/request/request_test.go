@@ -1,20 +1,8 @@
-package http
+package request
 
 import (
 	"testing"
 )
-
-func equalStringSlice(lhs, rhs []string) bool {
-	if len(lhs) != len(rhs) {
-		return false
-	}
-	for i := range lhs {
-		if lhs[i] != rhs[i] {
-			return false
-		}
-	}
-	return true
-}
 
 func TestAcceptEncodings(t *testing.T) {
 	cps := map[string][]string{
@@ -37,8 +25,14 @@ func TestAcceptEncodings(t *testing.T) {
 	}
 }
 
-func BenchmarkGenRequestID(b *testing.B) {
-	for i := 0; i < b.N; i++ {
-		_ = GenRequestID()
+func equalStringSlice(lhs, rhs []string) bool {
+	if len(lhs) != len(rhs) {
+		return false
 	}
+	for i := range lhs {
+		if lhs[i] != rhs[i] {
+			return false
+		}
+	}
+	return true
 }
